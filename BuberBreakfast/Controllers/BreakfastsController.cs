@@ -12,23 +12,21 @@ namespace BuberBreakfast.Controllers
         private readonly IBreakfastService _breakfastService;
 
         public BreakfastsController(IBreakfastService breakfastService)
-        {
+        {                              
             _breakfastService = breakfastService;
         }
 
         [HttpPost]
         public IActionResult CreateBreakfast(CreateBreakfastRequest request)
         {
-            var breakfast = new Breakfast(
-                Guid.NewGuid(),
-                request.Name,
-                request.Description,
-                request.StartDateTime,
-                request.EmdDateTime,
-                DateTime.UtcNow,
-                request.Savory,
-                request.Sweet
-                );
+            ErrorOr<Breakfast> requestToBreakfastResult = Breakfast.From(request);
+
+            if (requestToBreakfastResult.IsError)
+            {
+                return Problem(requestToBreakfastResult.Errors);
+            }
+
+            var breakfast = requestToBreakfastResult.Value;
 
             // TODO: save to db
 
@@ -65,20 +63,16 @@ namespace BuberBreakfast.Controllers
         [HttpPut("{id:guid}")]
         public IActionResult UpsertBreakfast(Guid id, UpsertBreakfastRequest request)
         {
-            var breakfast = new Breakfast(
-                id,
-                request.Name,
-                request.Description,
-                request.StartDateTime,
-                request.EmdDateTime,
-                DateTime.UtcNow,
-                request.Savory,
-                request.Sweet
-                );
+            ErrorOr<Breakfast> requestToBreakfastResult = Breakfast.From(id, request);
+
+            if (requestToBreakfastResult.IsError)
+            {
+                return Problem(requestToBreakfastResult.Errors);
+            }
+
+            var breakfast = requestToBreakfastResult.Value;
 
             ErrorOr<UpsertedBreakfast> updatedBreakfastResult = _breakfastService.UpsertBreakfast(breakfast);
-
-            // TODO: return 201 response if a new breakfast was created
 
             return updatedBreakfastResult.Match(
                 updated => updated.IsNewlyCreated ? CreatedAtGetBreakfast(breakfast) : NoContent(),
