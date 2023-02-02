@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BuberBreakfast.Controllers
 {
     [ApiController]
-    [Route("{controller}")]
+    [Route("[controller]")]
     public class BreakfastsController : ControllerBase
     {
         private readonly IBreakfastService _breakfastService;
@@ -71,13 +71,29 @@ namespace BuberBreakfast.Controllers
         [HttpPut("{id:guid}")]
         public IActionResult UpsertBreakfast(Guid id, UpsertBreakfastRequest request)
         {
-            return Ok(id);
+            var breakfast = new Breakfast(
+                id,
+                request.Name,
+                request.Description,
+                request.StartDateTime,
+                request.EmdDateTime,
+                DateTime.UtcNow,
+                request.Savory,
+                request.Sweet
+                );
+
+            _breakfastService.UpsertBreakfast(breakfast);
+
+            // TODO: return 201 response if a new breakfast was created
+
+            return NoContent();
         }
 
         [HttpDelete("{id:guid}")]
         public IActionResult DeleteBreakfast(Guid id)
         {
-            return Ok(id);
+            _breakfastService.DeleteBreakfast(id);
+            return NoContent();
         }
     }
 }
